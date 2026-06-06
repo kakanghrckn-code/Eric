@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absen Kehadiran</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-masuk {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-top: 15px;
+        }
+        .btn-masuk:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-hadir {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .btn-sakit {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .btn-izin {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .btn-alpa {
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            color: white;
+        }
+
+        .btn-hadir:hover, .btn-sakit:hover, .btn-izin:hover, .btn-alpa:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-kirim-email {
+            background: linear-gradient(135deg, #ea4335 0%, #google 100%);
+            background-color: #EA4335;
+            color: white;
+            margin-top: 15px;
+        }
+
+        .btn-logout {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .success-message {
+            text-align: center;
+        }
+
+        .checkmark {
+            font-size: 60px;
+            color: #38ef7d;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TAMPILAN 1: LOGIN -->
+    <div id="login-view" class="container">
+        <div class="logo">📋</div>
+        <h2>Absen Kehadiran</h2>
+        <input type="email" id="email" placeholder="Email Address" required>
+        <input type="text" id="nama" placeholder="Nama Lengkap" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button class="btn-masuk" onclick="doLogin()">MASUK</button>
+    </div>
+
+    <!-- TAMPILAN 2: MENU ABSEN -->
+    <div id="absen-view" class="container hidden">
+        <h2>Halo, <span id="display-nama"></span> 👋</h2>
+        <p>Pilih Status Kehadiran Anda:</p>
+        <button class="btn-hadir" onclick="submitAbsen('Hadir')">✅ HADIR</button>
+        <button class="btn-sakit" onclick="submitAbsen('Sakit')">🤒 SAKIT</button>
+        <button class="btn-izin" onclick="submitAbsen('Izin')">📝 IZIN</button>
+        <button class="btn-alpa" onclick="submitAbsen('Alpa')">❌ ALPA</button>
+    </div>
+
+    <!-- TAMPILAN 3: TERIMA KASIH -->
+    <div id="sukses-view" class="container hidden">
+        <div class="success-message">
+            <div class="checkmark">✔️</div>
+            <h3>Terima Kasih!</h3>
+            <div class="user-info">
+                <p>Nama: <strong id="terima-kasih-nama"></strong></p>
+                <p>Status: <strong id="status-terpilih"></strong></p>
+                <p>Tanggal: <strong id="tanggal-absen"></strong></p>
+                <p>Jam: <strong id="jam-absen"></strong></p>
+            </div>
+            
+            <!-- Tombol Kirim Email (Hanya muncul jika Hadir) -->
+            <div id="email-section" class="hidden">
+                <p style="color: #666; font-size: 14px;">Klik tombol di bawah untuk mengirim bukti absen ke email:</p>
+                <button class="btn-kirim-email" onclick="kirimEmail()">📧 KIRIM EMAIL</button>
+            </div>
+
+            <button class="btn-logout" onclick="logout()">Keluar</button>
+        </div>
+    </div>
+
+    <script>
+        // Variabel untuk menyimpan data
+        var userEmail = "";
+        var userNama = "";
+        var userPassword = "";
+        var statusAbsen = "";
+        var tanggal = "";
+        var jam = "";
+
+        function doLogin() {
+            userEmail = document.getElementById('email').value;
+            userNama = document.getElementById('nama').value;
+            userPassword = document.getElementById('password').value;
+
+            if(userEmail === "" || userNama === "" || userPassword === "") {
+                alert("Mohon isi semua data dengan lengkap!");
+                return;
+            }
+
+            // Simpan data ke localStorage
+            localStorage.setItem("userEmail", userEmail);
+            localStorage.setItem("userNama", userNama);
+
+            // Pindah ke halaman Absen
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('absen-view').classList.remove('hidden');
+            
+            document.getElementById('display-nama').innerText = userNama;
+        }
+
+        function submitAbsen(status) {
+            statusAbsen = status;
+            
+            // Ambil tanggal dan jam sekarang
+            var now = new Date();
+            tanggal = now.toLocaleDateString('id-ID', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            jam = now.toLocaleTimeString('id-ID', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            // Simpan ke localStorage
+            localStorage.setItem("statusAbsen", statusAbsen);
+            localStorage.setItem("tanggalAbsen", tanggal);
+            localStorage.setItem("jamAbsen", jam);
+
+            // Pindah ke halaman Sukses
+            document.getElementById('absen-view').classList.add('hidden');
+            document.getElementById('sukses-view').classList.remove('hidden');
+
+            // Tampilkan data
+            document.getElementById('terima-kasih-nama').innerText = userNama;
+            document.getElementById('status-terpilih').innerText = statusAbsen;
+            document.getElementById('tanggal-absen').innerText = tanggal;
+            document.getElementById('jam-absen').innerText = jam;
+
+            // Tampilkan tombol kirim email hanya jika HADIROnly jika Hadir
+            var emailSection = document.getElementById('email-section');
+            if(statusAbsen === "Hadir") {
+                emailSection.classList.remove('hidden');
+            } else {
+                emailSection.classList.add('hidden');
+            }
+
+            alert("Absen berhasil! Status: " + statusAbsen);
+        }
+
+        function kirimEmail() {
+            // Format Subject dan Body email
+            var subject = encodeURIComponent("Bukti Absen Kehadiran - " + userNama);
+            var body = encodeURIComponent(
+                "HALO,\n\n" +
+                "Saya ingin mengirim bukti kehadiran saya:\n\n" +
+                "=========================\n" +
+                "NAMA    : " + userNama + "\n" +
+                "EMAIL   : " + userEmail + "\n" +
+                "STATUS  : " + statusAbsen + "\n" +
+                "TANGGAL : " + tanggal + "\n" +
+                "JAM     : " + jam + "\n" +
+                "=========================\n\n" +
+                "Terima kasih."
+            );
+
+            // Buka aplikasi email dengan mailto
+            var emailUrl = "mailto:kakanghrckn@gmail.com?subject=" + subject + "&body=" + body;
+            window.location.href = emailUrl;
+        }
+
+        function logout() {
+            // Clear semua input
+            document.getElementById('email').value = "";
+            document.getElementById('nama').value = "";
+            document.getElementById('password').value = "";
+
+            // Clear localStorage
+            localStorage.clear();
+
+            // Kembali ke login
+            document.getElementById('sukses-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>
